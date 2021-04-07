@@ -1,0 +1,4 @@
+.vscode
+*.crt
+*.pem
+.DS_Store

@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-connectivity-deployment
+  labels:
+    app: test
+spec:
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      serviceAccountName: ksa-sql-instance
+      containers:
+        - name: psql-test
+          image: macborowy/express-postgres
+          env:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: sql-secret
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sql-secret
+                  key: password
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: sql-secret
+                  key: database
+            - name: PGHOST
+              value: "127.0.0.1"
+            - name: PGPORT
+              value: "5432"
+        - name: cloud-sql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.17
+          command:
+            - "/cloud_sql_proxy"
+            - "-instances=<YOUR-INSTANCE-CONNECTION-NAME>=tcp:5432"
+            - "-credential_file=/secrets/service_account.json"
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+            - name: vol-sa-key-secret
+              mountPath: /secrets/
+              readOnly: true
+      volumes:
+        - name: vol-sa-key-secret
+          secret:
+            secretName: sa-key-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-test
+spec:
+  selector:
+    app: test
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
