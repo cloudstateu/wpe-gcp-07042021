@@ -165,7 +165,7 @@ The API is needed to make connections from pod running the application to Cloud 
 1. Call the `svc-test` service using copied IP address:
 
    ```bash
-   curl <SVC-IP>:8080
+   curl <SVC-IP>:8080/people
    ```
 
    You should get the following output:
